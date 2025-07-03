@@ -1,5 +1,10 @@
 const std = @import("std");
 
+const CccEntry = packed struct {
+    key: u32,
+    value: u8,
+};
+
 pub fn main() !void {
     //
     // Set up allocator
@@ -58,7 +63,18 @@ pub fn main() !void {
     }
 
     //
-    // Write CCC map to a JSON file
+    // Write CCC map to binary file
+    //
+
+    var ccc_file = try std.fs.cwd().createFile("ccc.bin", .{ .truncate = true });
+    defer ccc_file.close();
+
+    var ccc_bw = std.io.bufferedWriter(ccc_file.writer());
+    try saveCccMap(&ccc_map, ccc_bw.writer());
+    try ccc_bw.flush();
+
+    //
+    // Write CCC map to JSON file
     //
 
     const output_file = try std.fs.cwd().createFile("ccc.json", .{ .truncate = true });
@@ -77,4 +93,17 @@ pub fn main() !void {
     }
 
     try ws.endObject();
+}
+
+fn saveCccMap(map: *const std.AutoHashMap(u32, u8), writer: anytype) !void {
+    try writer.writeInt(u32, @intCast(map.count()), .little);
+
+    var it = map.iterator();
+    while (it.next()) |kv| {
+        const e = CccEntry{
+            .key = std.mem.nativeToLittle(u32, kv.key_ptr.*),
+            .value = kv.value_ptr.*, // u8 has no endianness
+        };
+        try writer.writeStruct(e);
+    }
 }
