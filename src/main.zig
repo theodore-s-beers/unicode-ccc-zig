@@ -80,7 +80,7 @@ pub fn main() !void {
     const output_file = try std.fs.cwd().createFile("ccc.json", .{ .truncate = true });
     defer output_file.close();
 
-    var ws = std.json.writeStream(output_file.writer(), .{ .whitespace = .indent_2 });
+    var ws = std.json.writeStream(output_file.writer(), .{});
     try ws.beginObject();
 
     var map_iter = ccc_map.iterator();
